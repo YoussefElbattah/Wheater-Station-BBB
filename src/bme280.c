@@ -72,3 +72,47 @@ int write_sysfs_bme(const char *path, int calib){
 
 	return 0;
 }
+
+int max_min_check(sensor_attr *attr)
+{
+	if(!attr->initialized){
+		attr->max_value = attr->current_val;
+		attr->min_value = attr->current_val;
+		attr->initialized = 1;
+	}
+
+	if(!attr)
+		return -EINVAL;
+
+	if(attr->current_val > attr->max_value)
+		attr->max_value = attr->current_val;
+
+	if(attr->current_val < attr->min_value)
+		attr->min_value = attr->current_val;
+
+	return 0;
+
+}
+
+int status_update(sensor_attr *attr){
+
+	int ret;
+
+	if(!attr)
+		return -EINVAL;
+
+	if(attr->current_val > 28){
+	       if(snprintf(attr->stat, 5, "HIGH") < 0)
+		       return ret;
+	}
+
+	else if(attr->current_val < 15){
+		if(snprintf(attr->stat, 4, "LOW") < 0)
+			return ret;
+	}else{	
+		if(snprintf(attr->stat, 4, "MED") < 0)
+			return ret;
+	}
+
+	return 0;
+}
