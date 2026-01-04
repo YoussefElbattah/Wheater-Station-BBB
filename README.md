@@ -194,44 +194,43 @@ LO/HI 19.0/30.0
 
 ### Building and Deploying the LCD Kernel Module (Quick Guide)
 
-This section shows **only the essential steps** to obtain
+This section shows the **minimal steps** required to obtain
 `lcd_platform_driver.ko` on a **BeagleBone Black** using a **host-based build**.
 
 ---
 
-### 1. Module Source (Host)
+### 1. Prepare the Module Source (Host)
+
+Copy `lcd_platform_driver.c` from the project `drivers/` directory to the host machine.
 
 Directory layout:
-But before all of this download lcd_platform_driver.c from drivers directory and put it on the host machine
+
 ```
 lcd_driver/
 ├── lcd_platform_driver.c
 └── Makefile
 ```
 
-Create this `Makefile` next to `lcd_platform_driver.c`:
-
-
-### 2. Build on the Host
-
-From the module directory on the host machine:
+Create the following `Makefile` next to `lcd_platform_driver.c`:
 
 ```make
 obj-m := lcd_platform_driver.o
+```
 
-all:
-    make -C <KERNEL_SOURCE_DIR>      M=$(pwd)      ARCH=arm      CROSS_COMPILE=arm-linux-gnueabihf-      modules
-```
-Where:
-```bash
-- <KERNEL_SOURCE_DIR> is the root directory of the Linux kernel source
-- M=$(pwd) points to the directory containing lcd_platform_driver.c
-```
-Then
-```bash
-make all
-```
 ---
+
+### 2. Build the Module on the Host
+
+From the module directory on the host machine:
+
+```bash
+make -C <KERNEL_SOURCE_DIR> \
+     M=$(pwd) \
+     ARCH=arm \
+     CROSS_COMPILE=arm-linux-gnueabihf- \
+     modules
+```
+
 Result:
 
 ```
@@ -241,14 +240,16 @@ lcd_platform_driver.ko
 ---
 
 ### 3. Transfer to the BeagleBone Black
-From the module directory on the host machine:
+
+From the host machine:
+
 ```bash
 scp lcd_platform_driver.ko <user>@<bbb-ip>:/home/<user>/
 ```
 
 ---
 
-### 4. Load on the Target
+### 4. Load and Verify on the Target
 
 On the BeagleBone Black:
 
@@ -257,14 +258,11 @@ sudo insmod lcd_platform_driver.ko
 dmesg | tail
 ```
 
----
+Verify the LCD sysfs interface:
 
-Verify:
 ```bash
 ls /sys/class/bone_lcd/lcd_16x2/
 ```
-
----
 
 ### Verify BME280
 
