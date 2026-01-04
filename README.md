@@ -1,4 +1,4 @@
-nux Temperature Monitoring Station – BeagleBone Black
+#Linux Temperature Monitoring Station – BeagleBone Black
 
 This project implements a **minimal embedded Linux temperature monitoring system** based on the BeagleBone Black.  
 It demonstrates a clean and realistic embedded Linux architecture, from **hardware description using the Device Tree**, to **kernel drivers**, and a **userspace application** interacting exclusively through **sysfs**.
