@@ -33,7 +33,7 @@ At no point does the userspace application access GPIOs or I²C directly.
 
 ### Architecture Diagram
 
-![Architecture diagram](diagrams/bloc_diagram.png)
+![Architecture diagram](diagrams/architecture_diagram.png)
 
 ---
 
