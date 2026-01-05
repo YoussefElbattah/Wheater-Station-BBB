@@ -276,8 +276,8 @@ cat in_temp_input
 ### Build and run the application
 
 ```bash
-make app
-./app.elf
+make all
+./build/app.elf
 ```
 
 ---
