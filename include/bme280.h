@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 
 #define TEMP_VALUE 			"in_temp_input"
@@ -16,6 +17,17 @@
 #define PATH		"/sys/bus/iio/devices/iio:device0/"
 
 #define SOME_BYTES 	32
+
+#define LOW_CODE	0
+#define MED_CODE	1
+#define HOT_CODE	2
+
+#define UNDEFINED_CODE -99
+#define STATUS_TO_CODE(status) (                                   	\
+		    (strcmp((status), "LOW") == 0) ? LOW_CODE :         \
+		    (strcmp((status), "MED") == 0) ? MED_CODE :         \
+		    (strcmp((status), "HOT") == 0) ? HOT_CODE : UNDEFINED_CODE       \
+		    )
 
 /**
  * Status definition:

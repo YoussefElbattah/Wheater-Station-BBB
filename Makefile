@@ -3,6 +3,8 @@ CC := $(CROSS_COMPILE)gcc
 
 CFLAGS := -Wall -Wextra -Iinclude
 
+LDFLAGS := -lmosquitto
+
 BUILD := build
 SRC := src
 
@@ -11,7 +13,8 @@ TARGET := $(BUILD)/app.elf
 OBJS := \
 	$(BUILD)/app.o \
 	$(BUILD)/lcd.o \
-	$(BUILD)/bme280.o
+	$(BUILD)/bme280.o\
+	$(BUILD)/mqtt.o
 
 all: $(TARGET)
 
@@ -21,7 +24,7 @@ $(BUILD):
 
 # Link final
 $(TARGET): $(OBJS)
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 # Compilation des sources
 $(BUILD)/app.o: $(SRC)/app.c | $(BUILD)
@@ -32,6 +35,9 @@ $(BUILD)/lcd.o: $(SRC)/lcd.c | $(BUILD)
 
 $(BUILD)/bme280.o: $(SRC)/bme280.c | $(BUILD)
 	$(CC) $(CFLAGS) -c -o $@ $^
+
+$(BUILD)/mqtt.o: $(SRC)/mqtt.c | $(BUILD)
+	        $(CC) $(CFLAGS) -c -o $@ $^
 clean:
 	rm -rf $(BUILD)
 
