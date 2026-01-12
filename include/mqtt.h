@@ -4,15 +4,20 @@
 #include <mosquitto.h>
 #include "bme280.h"
 
-#define HOST		"youssef-bbb.duckdns.org"
-#define PORT		40000
-#define KEEP_ALIVE	60
-#define USER_NAME	"youssef_user"
-#define PASSWORD	"YoussefEl123"
+#define CONFIG_FILE	"/etc/bbb_mqtt.conf"
 
+struct mqtt_config_t {
+	    char host[64];
+	    int  port;
+	    char user[64];
+	    char pass[64];
+	    char topic[64];
+	    int  keepalive;
+};
 
-int mqtt_connect(struct mosquitto *mosq);
+int mqtt_load_config(struct mqtt_config_t *cfg); 
+int mqtt_connect(struct mosquitto *mosq, struct mqtt_config_t *cfg);
 int mqtt_init(struct mosquitto **mosq);
-int mqtt_publish(struct mosquitto *mosq, sensor_attr attr);
+int mqtt_publish(struct mosquitto *mosq, char *topic, sensor_attr attr);
 
 #endif 

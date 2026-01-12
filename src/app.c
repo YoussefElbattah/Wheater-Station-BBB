@@ -2,6 +2,7 @@
 #include "lcd.h"
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <mosquitto.h>
 
 #include "bme280.h"
@@ -13,6 +14,7 @@ int main(int argc, char **argv){
 	const char path[] = PATH TEMP_VALUE;
 	int ret;
 	struct mosquitto *mosq;
+	struct mqtt_config_t *cfg_ctx = malloc(sizeof(struct mqtt_config_t));
 	int retry_conn = 0;
 	/*ret = lcd_init();
 	if(ret < 0){
@@ -32,9 +34,14 @@ int main(int argc, char **argv){
 	if(ret < 0)
 		return ret;
 
+	ret = mqtt_load_config(cfg_ctx);
+	
+	if(ret < 0)
+		return ret;
+
 	do{
 		printf("trying to connect %d time \n", retry_conn + 1);
-		ret = mqtt_connect(mosq);
+		ret = mqtt_connect(mosq, cfg_ctx);
 		retry_conn++;
 	}while((ret != MOSQ_ERR_SUCCESS) && (retry_conn < RETRY_MAX));
 
@@ -91,7 +98,7 @@ int main(int argc, char **argv){
 			return ret;
 		*/
 
-		mqtt_publish(mosq, temp_attr);
+		mqtt_publish(mosq, cfg_ctx->topic ,temp_attr);
 
 		sleep(1);
 	}
