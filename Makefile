@@ -14,7 +14,10 @@ OBJS := \
 	$(BUILD)/app.o \
 	$(BUILD)/lcd.o \
 	$(BUILD)/bme280.o\
-	$(BUILD)/mqtt.o
+	$(BUILD)/mqtt.o \
+	$(BUILD)/display.o \
+	$(BUILD)/weather.o \
+	$(BUILD)/wireless.o
 
 all: $(TARGET)
 
@@ -37,6 +40,15 @@ $(BUILD)/bme280.o: $(SRC)/bme280.c | $(BUILD)
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 $(BUILD)/mqtt.o: $(SRC)/mqtt.c | $(BUILD)
+	        $(CC) $(CFLAGS) -c -o $@ $^
+
+$(BUILD)/display.o: $(SRC)/display.c | $(BUILD)
+	        $(CC) $(CFLAGS) -c -o $@ $^
+
+$(BUILD)/weather.o: $(SRC)/weather.c | $(BUILD)
+	        $(CC) $(CFLAGS) -c -o $@ $^
+
+$(BUILD)/wireless.o: $(SRC)/wireless.c | $(BUILD)
 	        $(CC) $(CFLAGS) -c -o $@ $^
 clean:
 	rm -rf $(BUILD)

@@ -6,14 +6,15 @@
 #include <stdio.h>
 #include <errno.h>
 
-static int connected = 0;
+volatile int mqtt_connected = 0;
+
 void on_disconnect(struct mosquitto *mosq, void *obj, int reason_code){
 	
 	printf("on_disconnect : %s\n", mosquitto_connack_string(reason_code));
 	if((reason_code != 0)){
 		mosquitto_reconnect(mosq);
 	}else
-		connected = 0;
+		mqtt_connected = 0;
 
 }
 
@@ -28,7 +29,54 @@ void on_connect(struct mosquitto *mosq, void *obj, int reason_code)
 	if(reason_code != 0){
 		mosquitto_disconnect(mosq);				
 	}else 
-		connected = 1;
+		mqtt_connected = 1;
+
+}
+
+void trim(char *s){
+	char *p = s;
+
+	while((*p) && (*p != '\n') && (*p != '\r'))
+		p++;
+
+	*p = 0;
+}
+int mqtt_load_config(struct mqtt_config_t *cfg)
+{
+	FILE *fd = fopen(CONFIG_FILE, "r");
+
+	if(!fd){
+		printf("Couldn't open config file\n, err : %d", -errno);
+		return -errno;
+	}	
+
+	char line[256];
+	while(fgets(line, sizeof(line), fd)){
+		
+		trim(line); // remove '\n' from the buffer and convert it to a buffer with '\0'
+		
+		char key[64] , value[124];
+
+		if(sscanf(line, "%63[^=]=%123s", key, value) != 2)
+			continue;
+
+		if(!strcmp(key , "host")) strncpy(cfg->host, value, sizeof(cfg->host));
+		
+		if(!strcmp(key , "port")) cfg->port = atoi(value);
+		
+		if(!strcmp(key , "user")) strncpy(cfg->user, value, sizeof(cfg->user));
+
+		if(!strcmp(key , "pass")) strncpy(cfg->pass, value, sizeof(cfg->pass));
+		
+		if(!strcmp(key , "topic")) strncpy(cfg->topic, value, sizeof(cfg->topic));
+
+		if(!strcmp(key , "keepalive")) cfg->keepalive = atoi(value);
+
+	}
+
+	fclose(fd);
+
+	return 0;
 
 }
 int mqtt_init(struct mosquitto **mosq){
@@ -52,15 +100,15 @@ int mqtt_init(struct mosquitto **mosq){
 }
 
 
-int mqtt_connect(struct mosquitto *mosq){
+int mqtt_connect(struct mosquitto *mosq, struct mqtt_config_t *cfg){
 	
-	int ret = mosquitto_username_pw_set(mosq, USER_NAME, PASSWORD);
+	int ret = mosquitto_username_pw_set(mosq, cfg->user, cfg->pass);
 	if(ret != MOSQ_ERR_SUCCESS){
 		printf("Couldn't set username & passwd, ERROR : %s\n", mosquitto_strerror(ret));
 		return ret;
 	}
 
-	ret = mosquitto_connect(mosq, HOST, PORT, KEEP_ALIVE);
+	ret = mosquitto_connect(mosq, cfg->host, cfg->port, cfg->keepalive);
 	
 	if(ret != MOSQ_ERR_SUCCESS){
 		printf("Couldn't connect to the broker, Error: %s\n", mosquitto_strerror(ret));
@@ -71,7 +119,7 @@ int mqtt_connect(struct mosquitto *mosq){
 
 }
 
-int mqtt_publish(struct mosquitto *mosq, sensor_attr attr){
+void mqtt_publish(struct mosquitto *mosq, char *topic, sensor_attr attr){
 	
 	int ret;
 	char payload[100];
@@ -80,10 +128,9 @@ int mqtt_publish(struct mosquitto *mosq, sensor_attr attr){
 	"\"status_code\":%d,\"status\":\"%s\"}", attr.current_val,
 	attr.min_value, attr.max_value, STATUS_TO_CODE(attr.stat), attr.stat);
 	
-	ret = mosquitto_publish(mosq, NULL, "bbb/weather", strlen(payload), payload, 2, false);
+	ret = mosquitto_publish(mosq, NULL, topic, strlen(payload), payload, 2, false);
 	if(ret != MOSQ_ERR_SUCCESS){
 		printf("Error while publishing : %s\n", mosquitto_strerror(ret));
 	}
 
-	return ret;
 }
