@@ -17,7 +17,7 @@ They need simple, reliable, and autonomous embedded devices capable of:
 - Operating even if the Internet connection goes down
 - Using trusted, open, maintainable Linux technologies rather than proprietary IoT platforms
 
-s project implements a complete **embedded Linux IoT temperature monitoring station**
+This project implements a complete **embedded Linux IoT temperature monitoring station**
 running on a **BeagleBone Black**, equipped with:
 
 - BME280 temperature sensor  
