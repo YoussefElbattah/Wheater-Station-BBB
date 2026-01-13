@@ -6,6 +6,8 @@
 
 #define CONFIG_FILE	"/etc/bbb_mqtt.conf"
 
+extern volatile int mqtt_connected;
+
 struct mqtt_config_t {
 	    char host[64];
 	    int  port;
@@ -18,6 +20,6 @@ struct mqtt_config_t {
 int mqtt_load_config(struct mqtt_config_t *cfg); 
 int mqtt_connect(struct mosquitto *mosq, struct mqtt_config_t *cfg);
 int mqtt_init(struct mosquitto **mosq);
-int mqtt_publish(struct mosquitto *mosq, char *topic, sensor_attr attr);
+void mqtt_publish(struct mosquitto *mosq, char *topic, sensor_attr attr);
 
 #endif 

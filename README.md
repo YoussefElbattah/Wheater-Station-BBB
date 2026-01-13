@@ -1,37 +1,42 @@
 # Linux Temperature Monitoring Station – BeagleBone Black
 
-This project implements a **minimal embedded Linux temperature monitoring system** based on the BeagleBone Black.  
+This project implements an embedded Linux temperature monitoring system based on the BeagleBone Black.  
 It demonstrates a clean and realistic embedded Linux architecture, from **hardware description using the Device Tree**, to **kernel drivers**, and a **userspace application** interacting exclusively through **sysfs**.
 
-The system continuously measures temperature using a **BME280 sensor**, interprets the data using simple deterministic logic, and displays the system state on a **16x2 character LCD**.
+The system continuously measures temperature using a **BME280 sensor**, interprets the data using simple deterministic logic, and displays the system state on a **16x2 character LCD**, and simultaneously sends the data over MQTT through a WAN connection.
 
 ---
 
 ## Problem Statement
+Many small industrial or remote environments require continuous monitoring of temperature conditions, but do not have the luxury of full-size PCs, cloud connectivity, or complex networking systems.
+They need simple, reliable, and autonomous embedded devices capable of:
 
-Small embedded systems often need to **monitor environmental temperature locally**, without relying on network connectivity, while remaining **observable, deterministic, and easy to debug** from Linux userspace.
+- Measuring environmental data locally
+- Displaying the information immediately to workers on site
+- Storing or publishing the values remotely when connectivity is available
+- Operating even if the Internet connection goes down
+- Using trusted, open, maintainable Linux technologies rather than proprietary IoT platforms
 
-This project implements a **local temperature monitoring station** that:
-- acquires temperature data from hardware sensors via the Linux kernel
-- interprets the measurements using explicit thresholds
-- keeps track of minimum and maximum observed values
-- provides immediate feedback through a character LCD
+s project implements a complete **embedded Linux IoT temperature monitoring station**
+running on a **BeagleBone Black**, equipped with:
 
-The system is designed to be simple, deterministic, and fully explainable.
+- BME280 temperature sensor  
+- 16x2 character LCD  
+- Userspace application split into logical modules  
+- Reads kernel sysfs (no direct GPIO/I²C from userspace)  
+- MQTT WAN publishing 
 
 ---
 
 ## Project Overview
 
-The goal of this project is to build a small but realistic embedded Linux system where:
-- hardware is described using the **Device Tree**
-- the Linux kernel handles all hardware access
-- userspace interacts **only through sysfs interfaces**
-- application logic remains entirely in userspace
-
-At no point does the userspace application access GPIOs or I²C directly.
-
-### Architecture Diagram
+1. Describe hardware properly in Device Tree  
+2. Let Linux kernel drivers handle all peripherals  
+3. Access hardware only through sysfs from userspace  
+4. Apply simple temperature logic (min, max, status)  
+5. Provide local LCD output  
+6. Publish JSON telemetry to a remote MQTT broker  
+7. Keep credentials **outside the code** using a config file Architecture Diagram
 
 ![Architecture diagram](diagram/architecture_diagram.png)
 
@@ -45,7 +50,7 @@ At no point does the userspace application access GPIOs or I²C directly.
 
 ### Global data flow
 
-**Hardware → Device Tree → Kernel subsystems → Kernel drivers → sysfs → Userspace application**
+**Hardware → Device Tree → Kernel subsystems → Kernel drivers → sysfs → Userspace application → MQTT Broker → Remote Clients**
 
 ---
 
@@ -69,8 +74,7 @@ The system is structured as follows:
 - temperature acquisition is handled by the standard Linux **IIO BME280 driver**
 - display control is handled by a **custom LCD platform driver**
 - userspace reads sensor values and sends display commands through sysfs
-
-This strict separation keeps hardware access confined to the kernel.
+- userspace sends temperature data using MQTT to a broker
 
 ---
 
@@ -131,6 +135,11 @@ The BME280 device:
 
 ## Kernel Space
 
+### Responsibilities
+- Owns LCD GPIOs through a custom platform LCD driver  
+- Owns BME280 via the IIO subsystem  
+- Exposes simple file interfaces
+
 ### Subsystems
 - I²C subsystem for sensor communication
 - GPIO subsystem for LCD control
@@ -152,15 +161,13 @@ The LCD driver exposes sysfs entries to:
 The userspace application is written in **C**.
 
 ### Responsibilities
-- read raw temperature values from sysfs
-- maintain **current, minimum, and maximum temperature**
-- determine a **temperature status**
-- format and display information on the LCD
-- refresh the display periodically
-
-### sysfs paths used
-- BME280: `/sys/bus/iio/devices/iio:device0/`
-- LCD: `/sys/class/bone_lcd/lcd_16x2/`
+| Module     | Responsibility |
+|------------|----------------|
+| `weather.c` | Reads sysfs temperature and computes business logic |
+| `display.c` | Writes formatted output to LCD |
+| `mqtt.c`    | Loads config, connects to MQTT, publishes JSON payload |
+| `wireless.c`| Makes SURE MQTT can talk to the broker (connect + manage internet) |
+| `app.c`     | Main control loop orchestrating sensors, display & network |
 
 ---
 
@@ -186,6 +193,70 @@ T:28.3C ST:MED
 ### Line 2
 ```
 LO/HI 19.0/30.0
+```
+
+---
+
+## 🌍 WAN MQTT Connectivity
+
+The system can transmit telemetry to:
+- LAN MQTT brokers
+- Public brokers via port-forwarding
+- DDNS-based hosts (DuckDNS, NoIP, etc.)
+
+Consumers include:
+- MQTT phone apps
+- Mosquitto clients
+- Telegraf → InfluxDB → Grafana
+
+---
+
+## 🔐 MQTT Configuration File
+
+Credentials are stored in:
+
+```
+/etc/bbb_mqtt.conf
+```
+
+Format:
+```
+host=my-broker.duckdns.org
+port=40000
+user=bbb_user
+pass=bbb_pass
+topic=bbb/weather
+keepalive=60
+```
+
+Ensure permissions:
+```bash
+sudo chmod 600 /etc/bbb_mqtt.conf
+```
+
+Location is defined in `mqtt.h`:
+
+```c
+#define CONF_FILE "/etc/bbb_mqtt.conf"
+```
+
+---
+
+## 🧪 JSON Payload Example
+
+```json
+{
+  "current_temp":23.4,
+  "min":21.1,
+  "max":29.6,
+  "status_code":1,
+  "status":"MEDIUM"
+}
+```
+
+MQTT topic example:
+```
+bbb/weather
 ```
 
 ---
@@ -219,17 +290,29 @@ cat in_temp_input
 
 ```bash
 make app
-./app.elf
+./build/app.elf
 ```
 
 ---
 
+## 📡 Test MQTT output
+
+From any device (LAN or WAN):
+```bash
+mosquitto_sub -h <your-host> -p <port> -t bbb/weather -u <user> -P <pass>
+```
+
+Or use:
+- MQTT Dashboard (Android)
+- MQTT Explorer
+
+---
 ## What This Project Demonstrates
 
-- Proper use of the Linux Device Tree
-- Platform driver development
-- IIO-based sensor integration
-- sysfs-based kernel/userspace communication
-- Deterministic userspace application logic
-- Clean embedded Linux system architecture
-
+- Device Tree Hardware declaration  
+- Custom Linux platform driver  
+- Integration of IIO sensors  
+- sysfs-based hardware/userspace interaction  
+- Secure external config management  
+- Modular embedded application design  
+- WAN IoT telemetry

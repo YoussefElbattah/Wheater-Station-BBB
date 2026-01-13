@@ -6,14 +6,15 @@
 #include <stdio.h>
 #include <errno.h>
 
-static int connected = 0;
+volatile int mqtt_connected = 0;
+
 void on_disconnect(struct mosquitto *mosq, void *obj, int reason_code){
 	
 	printf("on_disconnect : %s\n", mosquitto_connack_string(reason_code));
 	if((reason_code != 0)){
 		mosquitto_reconnect(mosq);
 	}else
-		connected = 0;
+		mqtt_connected = 0;
 
 }
 
@@ -28,7 +29,7 @@ void on_connect(struct mosquitto *mosq, void *obj, int reason_code)
 	if(reason_code != 0){
 		mosquitto_disconnect(mosq);				
 	}else 
-		connected = 1;
+		mqtt_connected = 1;
 
 }
 
@@ -118,7 +119,7 @@ int mqtt_connect(struct mosquitto *mosq, struct mqtt_config_t *cfg){
 
 }
 
-int mqtt_publish(struct mosquitto *mosq, char *topic, sensor_attr attr){
+void mqtt_publish(struct mosquitto *mosq, char *topic, sensor_attr attr){
 	
 	int ret;
 	char payload[100];
@@ -132,5 +133,4 @@ int mqtt_publish(struct mosquitto *mosq, char *topic, sensor_attr attr){
 		printf("Error while publishing : %s\n", mosquitto_strerror(ret));
 	}
 
-	return ret;
 }
