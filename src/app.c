@@ -16,11 +16,12 @@ int main(void){
 	int ret;
 	struct mosquitto **mosq = malloc(sizeof(struct mosquitto *));
 	struct mqtt_config_t *cfg_ctx = malloc(sizeof(struct mqtt_config_t));
-	
+	int display_on = 1;
+
 	ret = display_init();
 	if(ret < 0){
 		printf("Couldn't initialize LCD\n");
-		return ret;
+		display_on = 0;
 	}
 	
 	ret = wireless_init(mosq, cfg_ctx);
@@ -38,12 +39,13 @@ int main(void){
 			printf("Couldn't read weather data, error %d\n", ret);
 			return ret;
 		}
-
-		ret = display_result(temp_attr);
 		
-		if(ret < 0){
-			printf("Couldn't display result, error %d\n", ret);
-			return ret;
+		if(display_on){
+			ret = display_result(temp_attr);
+			if(ret < 0){
+				printf("Couldn't display result, error %d\n", ret);
+				return ret;
+			}
 		}
 		
 		if(mqtt_connected)

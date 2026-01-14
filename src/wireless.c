@@ -14,6 +14,10 @@ int wireless_init(struct mosquitto **mosq, struct mqtt_config_t *cfg_ctx){
 	ret = mqtt_load_config(cfg_ctx);
 	if(ret < 0)
 		return ret;
+	
+	ret = mqtt_tls_set(*mosq, cfg_ctx);
+	if(ret != MOSQ_ERR_SUCCESS)
+		return ret;
 
 	do{
 		printf("trying to connect %d time \n", retry_conn + 1);

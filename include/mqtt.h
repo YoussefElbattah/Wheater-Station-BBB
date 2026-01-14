@@ -14,12 +14,14 @@ struct mqtt_config_t {
 	    char user[64];
 	    char pass[64];
 	    char topic[64];
+	    char certificate[64];
 	    int  keepalive;
 };
 
 int mqtt_load_config(struct mqtt_config_t *cfg); 
 int mqtt_connect(struct mosquitto *mosq, struct mqtt_config_t *cfg);
 int mqtt_init(struct mosquitto **mosq);
+int mqtt_tls_set(struct mosquitto *mosq, struct mqtt_config_t *cfg);
 void mqtt_publish(struct mosquitto *mosq, char *topic, sensor_attr attr);
 
 #endif 

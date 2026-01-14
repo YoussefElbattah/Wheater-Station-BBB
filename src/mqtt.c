@@ -69,6 +69,8 @@ int mqtt_load_config(struct mqtt_config_t *cfg)
 		if(!strcmp(key , "pass")) strncpy(cfg->pass, value, sizeof(cfg->pass));
 		
 		if(!strcmp(key , "topic")) strncpy(cfg->topic, value, sizeof(cfg->topic));
+		
+		if(!strcmp(key , "ca-certificate")) strncpy(cfg->certificate, value, sizeof(cfg->certificate));
 
 		if(!strcmp(key , "keepalive")) cfg->keepalive = atoi(value);
 
@@ -90,6 +92,8 @@ int mqtt_init(struct mosquitto **mosq){
 		printf("Cannot create a new mosquitto client instance, error : %d\n", -errno);
 		return -errno;
 	}
+
+
 	/* Configure callbacks */
 	mosquitto_connect_callback_set(*mosq, on_connect);
 	mosquitto_publish_callback_set(*mosq, on_publish);
@@ -99,6 +103,24 @@ int mqtt_init(struct mosquitto **mosq){
 	
 }
 
+int mqtt_tls_set(struct mosquitto *mosq, struct mqtt_config_t *cfg){
+	
+
+	int ret = mosquitto_tls_set(mosq, cfg->certificate, NULL, NULL, NULL, NULL);
+	if(ret != MOSQ_ERR_SUCCESS)
+	{
+		printf("Couldn't set TLS certificate, Error : %s\n", mosquitto_strerror(ret));
+		return ret;
+	}
+
+	ret = mosquitto_tls_opts_set(mosq, 1, "tlsv1.2", NULL);
+	if(ret != MOSQ_ERR_SUCCESS)
+	{
+		printf("Couldn't set TLS options, Error : %s\n", mosquitto_strerror(ret));
+		return ret;
+	}
+	return ret;
+}
 
 int mqtt_connect(struct mosquitto *mosq, struct mqtt_config_t *cfg){
 	
