@@ -3,7 +3,7 @@
 This project implements an embedded Linux temperature monitoring system based on the BeagleBone Black.  
 It demonstrates a clean and realistic embedded Linux architecture, from **hardware description using the Device Tree**, to **kernel drivers**, and a **userspace application** interacting exclusively through **sysfs**.
 
-The system continuously measures temperature using a **BME280 sensor**, interprets the data using simple deterministic logic, and displays the system state on a **16x2 character LCD**, and simultaneously sends the data over MQTT through a WAN connection.
+The system continuously measures temperature using a **BME280 sensor**, interprets the data using simple deterministic logic, and displays the system state on a **16x2 character LCD**, and simultaneously sends the data over MQTT TLS through a WAN connection.
 
 ---
 
@@ -13,7 +13,7 @@ They need simple, reliable, and autonomous embedded devices capable of:
 
 - Measuring environmental data locally
 - Displaying the information immediately to workers on site
-- Storing or publishing the values remotely when connectivity is available
+- Storing or secure publishing the values remotely when connectivity is available
 - Operating even if the Internet connection goes down
 - Using trusted, open, maintainable Linux technologies rather than proprietary IoT platforms
 
@@ -24,7 +24,7 @@ running on a **BeagleBone Black**, equipped with:
 - 16x2 character LCD  
 - Userspace application split into logical modules  
 - Reads kernel sysfs (no direct GPIO/I²C from userspace)  
-- MQTT WAN publishing 
+- MQTT with TLS WAN publishing to HiveMQ broker 
 
 ---
 
@@ -35,7 +35,7 @@ running on a **BeagleBone Black**, equipped with:
 3. Access hardware only through sysfs from userspace  
 4. Apply simple temperature logic (min, max, status)  
 5. Provide local LCD output  
-6. Publish JSON telemetry to a remote MQTT broker  
+6. Publish JSON telemetry to a remote MQTT HiveMQ broker 
 7. Keep credentials **outside the code** using a config file Architecture Diagram
 
 ![Architecture diagram](diagram/architecture_diagram.png)
@@ -203,6 +203,7 @@ The system can transmit telemetry to:
 - LAN MQTT brokers
 - Public brokers via port-forwarding
 - DDNS-based hosts (DuckDNS, NoIP, etc.)
+- HiveMQ broker
 
 Consumers include:
 - MQTT phone apps
@@ -227,6 +228,7 @@ user=bbb_user
 pass=bbb_pass
 topic=bbb/weather
 keepalive=60
+ca-certeficate=your-certeficate-path.crt
 ```
 
 Ensure permissions:
@@ -374,3 +376,4 @@ Or use:
 - Secure external config management  
 - Modular embedded application design  
 - WAN IoT telemetry
+- Secure MQTT connection with TLS
